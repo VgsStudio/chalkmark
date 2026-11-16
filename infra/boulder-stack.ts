@@ -286,7 +286,7 @@ export class BoulderStack extends Stack {
       ['/api/profile', M.GET], ['/api/profile', M.PUT], ['/api/users', M.GET], ['/api/users/{handle}', M.GET],
       ['/api/users/{handle}/follow', M.POST], ['/api/users/{handle}/follow', M.DELETE],
       ['/api/users/{handle}/climbs/{id}/copy', M.POST], ['/api/social', M.GET],
-      ['/api/admin/overview', M.GET], ['/api/admin/announce', M.POST],
+      ['/api/admin/overview', M.GET], ['/api/admin/announce', M.POST], ['/api/admin/draft', M.POST],
     ];
     for (const [p, method] of routes) httpApi.addRoutes({ path: p, methods: [method], integration, authorizer });
     // Sem login (o app pode ser usado antes de criar conta): só leitura do que já é público.

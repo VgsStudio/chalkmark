@@ -90,3 +90,31 @@ export async function analyzePhoto(image: Buffer, mediaType: 'image/webp' | 'ima
   if (!use) throw Object.assign(new Error(`AI_EMPTY ${out.stopReason}`), { status: 502 });
   return sanitizeAi(use.input);
 }
+
+// ---------- avisos (Administração): pedido em linguagem natural → título e texto curtos ----------
+const NOTICE_SYSTEM = `Você escreve notificações push do Chalkmark, um app brasileiro para registrar boulders (escalada indoor).
+A partir do pedido do administrador, escreva UM aviso em português do Brasil:
+- title: até 40 caracteres, direto, pode ter 1 emoji.
+- body: 1 ou 2 frases curtas, até 140 caracteres, tom leve de quem escala junto, 1 ou 2 emojis.
+Sem hashtags, sem aspas, sem inventar recurso que o pedido não cita. Chame a função "notice".`;
+
+/** Rascunho de aviso: o admin revisa antes de mandar. */
+export async function draftNotice(request: string, model = AI_MODEL) {
+  client ??= new BedrockRuntimeClient({});
+  const out = await client.send(new ConverseCommand({
+    modelId: model,
+    system: [{ text: NOTICE_SYSTEM }],
+    messages: [{ role: 'user', content: [{ text: request }] }],
+    inferenceConfig: { maxTokens: 300, temperature: 0.7 },
+    toolConfig: {
+      tools: [{ toolSpec: { name: 'notice', description: 'O aviso pronto.', inputSchema: { json: {
+        type: 'object', required: ['title', 'body'],
+        properties: { title: { type: 'string' }, body: { type: 'string' } },
+      } as never } } }],
+      toolChoice: { tool: { name: 'notice' } },
+    },
+  }));
+  const r = (out.output?.message?.content?.find((b) => b.toolUse)?.toolUse?.input ?? {}) as Record<string, unknown>;
+  const cut = (v: unknown, n: number) => String(v ?? '').trim().slice(0, n);
+  return { title: cut(r.title, 60), body: cut(r.body, 240) };
+}

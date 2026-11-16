@@ -87,6 +87,12 @@ function Announce({ onSent }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
+  const [ask, setAsk] = useState('');
+  const [drafting, setDrafting] = useState(false);
+  const draft = async () => {
+    setDrafting(true);
+    try { const r = await api('/admin/draft', { method: 'POST', body: { prompt: ask } }); setTitle(r.title); setBody(r.body); } catch (e) { fail(e); } finally { setDrafting(false); }
+  };
   const send = async (test) => {
     if (!test && !confirm(`Mandar "${title}" para todo mundo? Vai como notificação e fica no sininho.`)) return;
     setBusy(true);
@@ -100,6 +106,8 @@ function Announce({ onSent }) {
   return (
     <section className="card stack">
       <h2>Novo aviso</h2>
+      <label className="field"><span>Gerar com IA: diga o que quer avisar</span><textarea value={ask} maxLength={500} rows={2} onChange={(e) => setAsk(e.target.value)} placeholder="ex.: chamar a galera pra treinar no fim de semana e lembrar do ranking" /></label>
+      <button className="btn block" type="button" disabled={!ask.trim() || drafting} onClick={draft}>{drafting ? 'Gerando…' : '✨ Gerar título e texto'}</button>
       <label className="field"><span>Título</span><input type="text" value={title} maxLength={60} onChange={(e) => setTitle(e.target.value)} placeholder="Chalkmark ficou mais rápido ⚡" /></label>
       <label className="field"><span>Texto</span><textarea value={body} maxLength={240} rows={3} onChange={(e) => setBody(e.target.value)} placeholder="O que mudou e um convite para abrir o app." /></label>
       {title && <div className="admin-preview"><img src="/icon.svg" alt="" width={36} height={36} /><div><strong>{title}</strong><div className="small">{body}</div></div></div>}

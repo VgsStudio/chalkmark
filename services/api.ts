@@ -6,7 +6,7 @@ import { CopyObjectCommand, DeleteObjectsCommand, GetObjectCommand, ListObjectsV
 import { randomBytes } from 'node:crypto';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { analyzePhoto, COLORS, sanitizeAi } from './ai.ts';
+import { analyzePhoto, COLORS, draftNotice, sanitizeAi } from './ai.ts';
 import { announce, announcements, overview, requireAdmin } from './admin.ts';
 import { cleanSubscription, pushTo, recordOpen, removeSubscription, saveSubscription, sendDaily, setPrefs, validTz, vapidKeys } from './push.ts';
 // Mesmas contas de XP/nível/sequência do app (uma fonte só).
@@ -679,6 +679,10 @@ async function route(event: HttpEvent, sub: string): Promise<HttpResult> {
     case 'GET /api/admin/overview':
       requireAdmin(event.requestContext.authorizer?.jwt?.claims);
       return json(200, await overview());
+    case 'POST /api/admin/draft': {
+      requireAdmin(event.requestContext.authorizer?.jwt?.claims);
+      return json(200, await draftNotice(str(body().prompt, 500, 'prompt') || bad('prompt')));
+    }
     case 'POST /api/admin/announce': {
       requireAdmin(event.requestContext.authorizer?.jwt?.claims);
       const b = body();
