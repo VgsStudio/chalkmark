@@ -6,7 +6,7 @@ import { sessionCard, shareCard } from '../storycard.js';
 /** Miniatura da foto do boulder (ou da raiz do projeto). */
 const rootPhoto = (c) => rootOf(c).thumbUrl;
 import * as S from '../stats.js';
-import { state, grade, gymOf, toast, myXp, rootOf } from '../core.js';
+import { state, grade, gymOf, toast, fail, myXp, rootOf } from '../core.js';
 import { openSheet } from '../session.js';
 import { ICONS, HOLD_SHAPES, HOLD_COLORS, KIND_COLOR, TICK, achLabel, achValue, achCatalog } from '../game.js';
 import { Bar } from './base.jsx';
@@ -197,12 +197,14 @@ export function recapSheet(s, unlocked) {
       <Hero />
       {unlocked.length > 0 && <ul className="achs">{unlocked.map((a) => <AchBadge key={a.id} a={a} />)}</ul>}
       <button className="btn story-btn block" type="button" onClick={async (e) => {
-        e.currentTarget.disabled = true;
-        // Fundo: a foto do melhor boulder mandado da sessão (se tiver foto).
-        const best = cs.filter((x) => S.isSend(x) && rootPhoto(x)).sort((a, b) => b.grade - a.grade)[0];
-        const cv = await sessionCard({ gymName: gymOf(s.gymId)?.name ?? '', startedAt: s.startedAt, endedAt: s.endedAt, climbs: sum.climbs, sends: sum.sends, flashes, maxGrade: sum.maxGrade, xp: S.totalXp(cs), photoUrl: best && rootPhoto(best), holds: best && rootOf(best).holds });
-        await shareCard(cv, 'chalkmark-sessao', 'session');
-        e.target.disabled = false;
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+          // Fundo: a foto do melhor boulder mandado da sessão (se tiver foto).
+          const best = cs.filter((x) => S.isSend(x) && rootPhoto(x)).sort((a, b) => b.grade - a.grade)[0];
+          const cv = await sessionCard({ gymName: gymOf(s.gymId)?.name ?? '', startedAt: s.startedAt, endedAt: s.endedAt, climbs: sum.climbs, sends: sum.sends, flashes, maxGrade: sum.maxGrade, xp: S.totalXp(cs), photoUrl: best && rootPhoto(best), photoId: best && rootOf(best).id, holds: best && rootOf(best).holds });
+          await shareCard(cv, 'chalkmark-sessao', 'session');
+        } catch (err) { fail(err); } finally { btn.disabled = false; } // antes: erro deixava o botão cinza
       }}>📸 {t('story.share')}</button>
       <button className="btn primary big block" type="button" onClick={closeSheet}>{t('recap.close')}</button>
     </div>,

@@ -12,6 +12,8 @@ Você é o analista de produto do **Chalkmark** (app web/PWA de registro de boul
 - Coleta em `web/src/analytics.js`. Não mede `localhost`. `person_profiles: 'identified_only'`: só quem entra com conta vira pessoa identificada; convidados são anônimos (`guest = true` nos eventos).
 - Propriedades registradas em todo evento: `guest`, `installed` (PWA na tela inicial), `app_lang`.
 - Coorte de contas de teste: **324505** (filtro padrão de teste). Confira se ela ainda está vazia; se estiver, avise que os acessos do dono podem estar nos números.
+- Robôs de prévia de link (Meta, Google etc.) entram como convidados de fora do Brasil (New York, The Dalles, Atlanta, Tel Aviv, Clonee…) com 1 tela e segundos de uso. Conte "pessoas reais" sem eles: exclua quem só tem `$pageview`/`$web_vitals` e nenhuma ação, e diga quantos excluiu.
+- Antes de 2026-11-17, `auth_google_click`, `auth_signup` e `auth_login` se perdiam com o redirecionamento do login (agora vão na hora). O funil de conta antigo subconta; use `profile_created` e `$identify` como apoio.
 - O app só mede desde **2026-11-12**. Não fale de tendência com poucos dias de dado.
 
 ## Eventos do app (custom)

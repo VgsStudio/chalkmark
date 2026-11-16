@@ -16,6 +16,11 @@ export function track(event, props) {
   if (!statsOn()) return;
   if (ph) ph.capture(event, props); else if (queue.length < 50) queue.push([event, props]);
 }
+/** Evento logo antes de sair da página (login, recarregar): vai na hora, senão some com a navegação. */
+export function trackNow(event, props) {
+  if (statsOn() && ph) ph.capture(event, props, { transport: 'sendBeacon', send_instantly: true });
+  else track(event, props);
+}
 /** Erro tratado pelo app (os não tratados o PostHog pega sozinho). */
 export function trackError(err) {
   if (ph && statsOn() && err instanceof Error) ph.captureException(err);
@@ -34,6 +39,7 @@ export async function startAnalytics({ userId, guest }) {
     autocapture: true,
     enable_heatmaps: true,
     capture_exceptions: true,
+    capture_dead_clicks: true, // toque que não faz nada (botão que parece botão mas não é)
     disable_surveys: true,
     disable_web_experiments: true,
     session_recording: {
@@ -42,6 +48,10 @@ export async function startAnalytics({ userId, guest }) {
       maskTextSelector: '.person-row, .profile-head, .feed-head, .rank, .suggest, .friends-card, .auth-info, .pinned-head + *',
       // Fotos (parede, perfil) não são gravadas.
       blockSelector: 'img, canvas, .avatar',
+      // Arrastar (zoom da foto, puxar janela, deslizar sessão) muda a tela a cada quadro; com o limite
+      // padrão a gravação descartava esses trechos ("Too many mutations").
+      __mutationThrottlerBucketSize: 300,
+      __mutationThrottlerRefillRate: 60,
     },
     // Depuração: localStorage.ph_debug = 'true' mostra no console tudo que é enviado.
     debug: (() => { try { return localStorage.getItem('ph_debug') === 'true'; } catch { return false; } })(),

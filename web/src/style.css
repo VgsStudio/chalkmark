@@ -393,6 +393,8 @@ p.small .ico { display: inline; width: 14px; height: 14px; vertical-align: -2px;
 .check { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border: 2px solid var(--line); border-radius: 16px; font-weight: 700; cursor: pointer; }
 .check input { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--blue); }
 .detect-status { margin: 10px 0 0; font-weight: 700; color: var(--muted); min-height: 1.4em; }
+.story-preview { display: block; max-height: 55vh; max-width: 100%; margin: 0 auto; border-radius: 14px; }
+.boot-loading { text-align: center; margin-top: 30vh; }
 .detect-status.loading::before { content: ""; display: inline-block; width: 12px; height: 12px; margin-right: 8px; vertical-align: -1px; border: 2.5px solid var(--line); border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; }
 .overlay rect { stroke: #00e5ff; stroke-width: 3; }
 .overlay rect.under { stroke: rgb(0 0 0 / .55); stroke-width: 6; }

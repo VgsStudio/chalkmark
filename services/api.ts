@@ -7,7 +7,7 @@ import { randomBytes } from 'node:crypto';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { analyzePhoto, COLORS, sanitizeAi } from './ai.ts';
-import { cleanSubscription, pushTo, removeSubscription, saveSubscription, sendDaily, setPrefs, validTz, vapidKeys } from './push.ts';
+import { cleanSubscription, pushTo, recordOpen, removeSubscription, saveSubscription, sendDaily, setPrefs, validTz, vapidKeys } from './push.ts';
 // Mesmas contas de XP/nível/sequência do app (uma fonte só).
 import { distanceKm, isSend, level, streakWeeks, totalXp } from '../web/src/stats.js';
 import {
@@ -384,7 +384,7 @@ async function deleteAccount(sub: string, username: string) {
   const mine: Record<string, unknown>[] = [];
   let ExclusiveStartKey: Record<string, unknown> | undefined;
   do {
-    const out = await ddb.send(new QueryCommand({ TableName: TABLE, KeyConditionExpression: 'pk = :pk', ExpressionAttributeValues: { ':pk': pk }, ProjectionExpression: 'pk, sk, handle', ExclusiveStartKey }));
+    const out = await ddb.send(new QueryCommand({ TableName: TABLE, KeyConditionExpression: 'pk = :pk', ExpressionAttributeValues: { ':pk': pk }, ProjectionExpression: 'pk, sk, handle, pushBucket, pushBucket2', ExclusiveStartKey }));
     mine.push(...(out.Items ?? []));
     ExclusiveStartKey = out.LastEvaluatedKey;
   } while (ExclusiveStartKey);
@@ -395,6 +395,9 @@ async function deleteAccount(sub: string, username: string) {
     if (sk.startsWith('FOLLOWS#')) keys.push({ pk: pkOf(sk.slice(8)), sk: `FOLLOWER#${sub}` });
     if (sk.startsWith('FOLLOWER#')) keys.push({ pk: pkOf(sk.slice(9)), sk: `FOLLOWS#${sub}` });
     if (sk === 'PROFILE' && x.handle) keys.push({ pk: `HANDLE#${x.handle}`, sk: 'HANDLE' });
+    // Baldes de notificação (antes ficavam, e o agendamento recriava os ajustes de quem já tinha saído).
+    if (sk === 'SETTINGS' && x.pushBucket) keys.push({ pk: String(x.pushBucket), sk: sub });
+    if (sk === 'SETTINGS' && x.pushBucket2) keys.push({ pk: String(x.pushBucket2), sk: `${sub}#open` });
   }
   // Links compartilhados por ela. ponytail: Scan (exclusão é rara); com volume, indexar por dono.
   ExclusiveStartKey = undefined;
@@ -435,6 +438,8 @@ async function route(event: HttpEvent, sub: string): Promise<HttpResult> {
   switch (event.routeKey) {
     case 'GET /api/settings': {
       const { Item } = await ddb.send(new GetCommand({ TableName: TABLE, Key: { pk, sk: 'SETTINGS' } }));
+      // O app pede os ajustes toda vez que abre: serve para aprender o horário em que a pessoa abre o app.
+      await recordOpen(sub, Item ?? {}).catch((e) => log('open.failed', { message: (e as Error).message.slice(0, 200) }));
       return json(200, Item ? pub(Item) : {});
     }
     case 'PUT /api/settings': {

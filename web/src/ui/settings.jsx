@@ -146,7 +146,8 @@ const findEl = (s) => { const el = typeof s.el === 'function' ? s.el() : documen
 /** Passos { el: seletor | () => elemento, text }: escurece a tela, recorta o elemento e mostra o balão.
  *  Passo sem elemento visível é pulado. Roda uma vez por `key`. */
 export function runTour(key, steps, onDone = () => {}) {
-  if (tourRunning || seen(key)) return false;
+  // Com uma janela aberta (ex.: convite para criar conta) o tutorial ficaria por baixo dela; fica para a próxima.
+  if (tourRunning || seen(key) || $('#sheet').open) return false;
   const list = steps.filter(findEl);
   if (!list.length) return false;
   tourRunning = true;
@@ -190,6 +191,7 @@ function Tour({ steps, end }) {
 /** Tutorial da primeira abertura: câmera, sessão, sequência, Home, perfil e ajustes. */
 export function appTour(onDone) {
   return runTour('cm:tour', [
+    { el: '#tabbar a[data-tab="feed"]', text: t('tour.feed') },
     { el: '#tab-cam', text: t('tour.cam') },
     { el: () => [...document.querySelectorAll('main .btn.primary.big, main .btn.go.big')][0], text: t('tour.session') },
     { el: '#streak-pill:not([hidden])', text: t('tour.streak') },

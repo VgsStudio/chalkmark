@@ -9,7 +9,7 @@ import { playResult } from '../sound.js';
 import * as S from '../stats.js';
 import {
   PHOTO_TERMS_VERSION, HOLD_TYPES, WALL_ANGLES, STYLE_TAGS, RESULTS, $, state, toast, fail, sessionsText, colorName, grade,
-  guestMode, api, publicApi, loadAll, activeSession, gymOf, climbOf, rootOf, upsert, toCanvas, encode, compress, upload, myXp } from '../core.js';
+  guestMode, api, publicApi, loadAll, activeSession, gymOf, climbOf, rootOf, upsert, photoBlob, toCanvas, encode, compress, upload, myXp } from '../core.js';
 import { render, needAccount } from '../app.js';
 import { PIN_ICON, PENCIL_ICON, CHECK_ICON, SHARE_ICON } from '../game.js';
 import { openSheet } from '../session.js';
@@ -98,7 +98,7 @@ export const quickLogSheet = (s) => openSheet(<QuickLog s={s} />);
 function QuickLog({ s }) {
   const [color, setColor] = useState(null);
   const [g, setG] = useState(lastGrade);
-  const [result, setResult] = useState('sent');
+  const [result, setResult] = useState('project'); // padrão: projeto (a pessoa marca quando mandar)
   const [busy, setBusy] = useState(false);
   const save = async () => {
     setBusy(true);
@@ -177,7 +177,7 @@ function NewClimbForm({ s }) {
   const palette = gym?.palette ?? {};
   // Estado do formulário num objeto só (o detector e os gestos mexem nele fora do ciclo do React).
   const d = useRef({
-    color: null, grade: lastGrade(), attempts: 1, result: 'sent', note: '', tap: null, projectId: null, canvas: null, lab: null, suggestion: null,
+    color: null, grade: lastGrade(), attempts: 1, result: 'project', note: '', tap: null, projectId: null, canvas: null, lab: null, suggestion: null,
     boxes: null, rgba: null, seed: null, route: null, detect: null,
   }).current;
   const [saving, setSaving] = useState(false);
@@ -191,7 +191,7 @@ function NewClimbForm({ s }) {
     try {
       const canvas = await toCanvas(file, 1568);
       d.preparing = false;
-      Object.assign(d, { canvas, tap: null, lab: null, suggestion: null, boxes: null, seed: null, route: null, detect: 'loading', zoom: { k: 1, x: 0, y: 0 }, t0: performance.now() });
+      Object.assign(d, { canvas, tap: null, lab: null, suggestion: null, boxes: null, seed: null, route: null, edited: false, detect: 'loading', zoom: { k: 1, x: 0, y: 0 }, t0: performance.now() });
       d.rgba = canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, canvas.width, canvas.height).data;
       draw();
       // Detecta as agarras em segundo plano enquanto você preenche o resto.
@@ -234,6 +234,8 @@ function NewClimbForm({ s }) {
   /** Muda a cor da via (toque ou chip) e refaz o grupo de agarras. */
   const setColor = (color) => {
     d.color = color;
+    // Via já corrigida à mão: trocar a cor só troca a cor (antes refazia a via e apagava as marcações).
+    if (d.seed && d.edited) { d.seed.color = color; return; }
     if (d.seed) {
       d.seed.color = color;
       d.route = routeHolds(d.boxes, d.seed, d.canvas.width, d.canvas.height);
@@ -255,12 +257,13 @@ function NewClimbForm({ s }) {
     if (hit && hit !== d.seed) {
       // Ajuste manual: toque numa agarra inclui ou tira ela da via.
       d.route = d.route.includes(hit) ? d.route.filter((b) => b !== hit) : [...d.route, hit];
-    } else if (!hit || !d.route) {
+      d.edited = true;
+    } else if (!d.route) {
       applyTap(x, y);
-    }
+    } // com a via marcada, toque fora de agarra não faz nada (antes recomeçava a via do zero)
     draw();
   };
-  const resetRoute = () => { Object.assign(d, { tap: null, seed: null, route: null, suggestion: null, lab: null }); draw(); };
+  const resetRoute = () => { Object.assign(d, { tap: null, seed: null, route: null, suggestion: null, lab: null, edited: false }); draw(); };
 
   const doCalibrate = async () => {
     if (!gym || !d.lab || !d.color || d.color === 'other') return;
@@ -334,8 +337,8 @@ function NewClimbForm({ s }) {
   const fileInput = <input type="file" accept="image/*" capture="environment" hidden onChange={onFile} />;
   const brush = d.paint && d.route ? holdBrush({
     boxes: () => d.boxes ?? [], aspect: () => d.canvas.width / d.canvas.height,
-    isIn: (b) => d.route.includes(b), add: (b) => d.route.push(b),
-    remove: (b) => { if (b !== d.seed) d.route = d.route.filter((x) => x !== b); },
+    isIn: (b) => d.route.includes(b), add: (b) => { d.route.push(b); d.edited = true; },
+    remove: (b) => { if (b !== d.seed) { d.route = d.route.filter((x) => x !== b); d.edited = true; } },
     done: () => draw(),
   }) : null;
 
@@ -369,7 +372,7 @@ function NewClimbForm({ s }) {
           ? (
             <section>
               <Stage z={d.zoom} onTap={onTap} detecting={d.detect === 'loading'} paint={brush}
-                onLong={(x, y) => { if (d.route && cycleRole(d.route, x, y)) draw(); }}>
+                onLong={(x, y) => { if (d.route && cycleRole(d.route, x, y)) { d.edited = true; draw(); } }}>
                 <CanvasView canvas={d.canvas} />
                 <Overlay holds={d.route} all={d.boxes} />
                 {/* A bolinha do toque só enquanto não há via marcada (depois as caixas mostram tudo). */}
@@ -523,8 +526,7 @@ export function ClimbView({ id }) {
     const e = he.current;
     draw();
     try {
-      const url = photo?.url ?? (await api(`/climbs/${r.id}/media`)).photoUrl;
-      const blob = await (await fetch(url, { cache: 'no-store' })).blob();
+      const blob = await photoBlob(r.id, photo?.url);
       const canvas = await toCanvas(blob, 1568);
       if (he.current !== e) return;
       Object.assign(e, { canvas, rgba: canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, canvas.width, canvas.height).data });
@@ -701,7 +703,7 @@ function StoryButton({ c, r, photoUrl, gymName }) {
   const go = async () => {
     setBusy(true);
     try {
-      const cv = await climbCard({ ...c, holds: r.holds }, { photoUrl, gymName });
+      const cv = await climbCard({ ...c, holds: r.holds }, { photoUrl, photoId: r.id, gymName });
       await shareCard(cv, `chalkmark-${grade(c.grade)}`, 'climb');
     } catch (err) { fail(err); }
     setBusy(false);

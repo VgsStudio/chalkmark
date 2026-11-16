@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cleanSubscription, dailyMessage, learnedHour, utcHourFor } from '../services/push.ts';
+import { cleanSubscription, dailyMessage, learnedHour, learnedOpenHour, nudgeMessage, secondHour, utcHourFor } from '../services/push.ts';
 
 const TZ = 'America/Sao_Paulo'; // UTC-3, sem horário de verão
 const at = (iso: string) => new Date(iso);
@@ -47,4 +47,26 @@ test('dailyMessage: 1 dia em 4 vem uma variada (grau máximo, dias sem parede, m
   assert.doesNotMatch(msg.title + msg.body, /undefined|NaN/);
   const wed = dailyMessage([{ startedAt: '2026-11-02T21:00:00Z' }], sends, {}, { ...ctx, now: at('2026-11-11T20:00:00Z') })!;
   assert.match(wed.title, /^🧗 Vitor, bora manter/);
+});
+
+test('segundo aviso: horário de abrir o app (ou almoço), sempre a 3 h+ do lembrete', () => {
+  assert.equal(learnedOpenHour([8, 8, 21, 8, 13]), 8);
+  assert.equal(learnedOpenHour([8, 8]), null); // poucas aberturas
+  assert.equal(secondHour(8, 17), 8);
+  assert.equal(secondHour(16, 17), 12); // perto demais do lembrete: almoço
+  assert.equal(secondHour(null, 11), 20);
+});
+
+test('nudgeMessage: sumido, meta da semana, divertida em alguns dias e folga nos outros', () => {
+  const ctx = { name: 'Vitor', lang: 'pt' as const, tz: TZ, now: at('2026-11-13T15:00:00Z'), seed: 'u1' }; // sexta 12h
+  const old = [{ startedAt: '2026-11-04T21:00:00Z' }];
+  assert.match(nudgeMessage(old, { lastSeenAt: '2026-11-08T12:00:00Z' }, ctx)!.title, /Vitor, faz 5 dias que você não aparece/);
+  assert.equal(nudgeMessage(old, { lastSeenAt: '2026-11-13T11:00:00Z' }, ctx), null); // já abriu hoje
+  assert.match(nudgeMessage([{ startedAt: '2026-11-10T21:00:00Z' }], { weeklySessions: 3, lastSeenAt: '2026-11-12T12:00:00Z' }, ctx)!.body, /Faltam 2 sessões/);
+  // Semana em dia e nada urgente: em 30 dias, algumas divertidas e alguns dias de folga, sem texto quebrado.
+  const ok = [{ startedAt: '2026-11-10T21:00:00Z' }];
+  const days = [...Array(30)].map((_, i) => nudgeMessage(ok, {}, { ...ctx, now: new Date(Date.parse('2026-11-10T15:00:00Z') + i * 86400_000) }));
+  const sent = days.filter(Boolean);
+  assert.ok(sent.length >= 12 && sent.length <= 26, String(sent.length));
+  for (const m of sent) assert.doesNotMatch(m!.title + m!.body, /\{N\}|undefined/);
 });

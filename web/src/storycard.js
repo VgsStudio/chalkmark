@@ -2,8 +2,9 @@
 // Visual: foto da parede em tela cheia, dados por cima (como Strava), selo do resultado e risco de giz.
 import { fmtDate, fmtDuration, t } from './i18n.js';
 import { SWATCH } from './color.js';
-import { colorName, grade, toast } from './core.js';
+import { colorName, grade, photoBlob, toast } from './core.js';
 import { track } from './analytics.js';
+import { openSheet } from './session.js';
 
 const W = 1080, H = 1920;
 const FONT = '"SF Pro Rounded", ui-rounded, "Arial Rounded MT Bold", Nunito, system-ui, sans-serif';
@@ -11,8 +12,8 @@ const NAVY = '#0b1024', BLUE = '#2f5bff', YELLOW = '#ffc531', GREEN = '#1fbf6a';
 
 const loadImg = (src) => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = src; });
 /** Foto de outro domínio (S3) sem "sujar" o canvas: baixa como blob (o bucket libera GET para o app). */
-async function photoBitmap(url) {
-  try { return await createImageBitmap(await (await fetch(url)).blob()); } catch { return null; }
+async function photoBitmap(id, url) {
+  try { return await createImageBitmap(await photoBlob(id, url)); } catch { return null; }
 }
 const canvas = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return [c, c.getContext('2d')]; };
 function rr(ctx, x, y, w, h, r) {
@@ -80,9 +81,9 @@ function holdsOn(ctx, holds, { dx, dy, dw, dh }, color = '#fff', width = 9) {
 const placeText = (c, gymName) => [gymName, fmtDate(c.createdAt, { day: 'numeric', month: 'short' })].filter(Boolean).join('  ·  ');
 
 /** Boulder mandado (estilo Strava): foto em tela cheia com a via marcada e uma faixa de dados limpa embaixo. */
-export async function climbCard(c, { photoUrl, gymName }) {
+export async function climbCard(c, { photoUrl, photoId, gymName }) {
   const [cv, ctx] = canvas();
-  const bmp = photoUrl ? await photoBitmap(photoUrl) : null;
+  const bmp = photoUrl ? await photoBitmap(photoId, photoUrl) : null;
   const flash = c.result === 'flash';
   ctx.textBaseline = 'alphabetic';
   if (bmp) { const at = cover(ctx, bmp, 0, 0, W, H, 140); holdsOn(ctx, c.holds, at); }
@@ -116,9 +117,9 @@ function stats(ctx, cols, y) {
 }
 
 /** Fim de sessão, no mesmo estilo: fundo da marca, título, e a faixa de números embaixo. */
-export async function sessionCard({ gymName, startedAt, endedAt, climbs, sends, flashes, maxGrade, xp, photoUrl, holds }) {
+export async function sessionCard({ gymName, startedAt, endedAt, climbs, sends, flashes, maxGrade, xp, photoUrl, photoId, holds }) {
   const [cv, ctx] = canvas();
-  const bmp = photoUrl ? await photoBitmap(photoUrl) : null;
+  const bmp = photoUrl ? await photoBitmap(photoId, photoUrl) : null;
   if (bmp) { const at = cover(ctx, bmp, 0, 0, W, H, 160); holdsOn(ctx, holds, at); }
   else {
     const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, BLUE); g.addColorStop(1, NAVY); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
@@ -141,12 +142,32 @@ export async function sessionCard({ gymName, startedAt, endedAt, climbs, sends, 
 }
 
 /** Abre o compartilhar do celular com a imagem (Instagram Stories, WhatsApp…); sem suporte, baixa a imagem. */
+const SITE = 'chalkmark.vsoller.com.br';
+/** Imagem pronta: prévia, "Compartilhar nos stories" (toque novo) e "Salvar imagem". */
+function readySheet(file, blob) {
+  const url = URL.createObjectURL(blob);
+  const box = document.createElement('div');
+  box.className = 'stack';
+  const img = new Image();
+  Object.assign(img, { src: url, alt: '', className: 'story-preview' });
+  const go = document.createElement('button');
+  Object.assign(go, { type: 'button', className: 'btn primary big block', textContent: t('story.share') });
+  go.onclick = () => navigator.share({ files: [file], text: SITE }).catch(() => {});
+  const save = document.createElement('a');
+  Object.assign(save, { href: url, download: file.name, className: 'btn block', textContent: t('story.save') });
+  box.append(img, go, save);
+  openSheet(box);
+}
+
 export async function shareCard(cnv, name, kind) {
   const blob = await new Promise((r) => cnv.toBlob(r, 'image/png'));
   const file = new File([blob], `${name}.png`, { type: 'image/png' });
   track('story_shared', { kind });
   if (navigator.canShare?.({ files: [file] })) {
-    try { await navigator.share({ files: [file], text: 'chalkmark.vsoller.com.br' }); } catch { /* cancelou */ }
+    // Não espera o compartilhar terminar: no Android a promessa às vezes nunca volta e o botão ficava
+    // cinza ("Montando a imagem…") para sempre. Se o celular recusar porque montar a imagem demorou
+    // (o toque "venceu"), mostra a imagem pronta com um botão que compartilha num toque novo.
+    navigator.share({ files: [file], text: SITE }).catch((e) => { if (e?.name === 'NotAllowedError') readySheet(file, blob); });
     return;
   }
   const a = document.createElement('a');

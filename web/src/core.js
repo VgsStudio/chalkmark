@@ -182,6 +182,14 @@ export async function api(path, { method = 'GET', body } = {}) {
   return data;
 }
 
+/** Foto de um boulder como blob. O link assinado vale 1 h (app aberto há horas = link vencido):
+ *  se falhar, pede um link novo e tenta mais uma vez. */
+export async function photoBlob(climbId, url) {
+  const get = async (u) => { const res = await fetch(u, { cache: 'no-store' }); if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.blob(); };
+  if (url) { try { return await get(url); } catch { /* link vencido: pede outro abaixo */ } }
+  return get((await api(`/climbs/${climbId}/media`)).photoUrl);
+}
+
 /** Leitura pública (sem login): boulder compartilhado e cartão de perfil. */
 export async function publicApi(path) {
   const res = await fetch(`/api/public${path}`);

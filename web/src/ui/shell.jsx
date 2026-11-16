@@ -1,5 +1,5 @@
 // Casca do app em React: topo, barra de abas, rotas por hash e a tela de login.
-import { track, pageview } from '../analytics.js';
+import { track, trackNow, pageview } from '../analytics.js';
 import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
 import { t } from '../i18n.js';
 import * as S from '../stats.js';
@@ -35,10 +35,10 @@ const ROUTES = [
   [/^#\/settings(?:\/([a-z]+))?$/, (group) => <SettingsPage group={group} />, 'profile', 'settings'],
   [/^#\/u\/([a-z0-9_.]{3,20})$/, (handle) => <User handle={handle} />, 'profile', 'user_profile'],
 ];
-// Home (feed) fora da barra enquanto há poucos usuários: a rota #/feed continua existindo.
-const HOME_ON = false;
-/** Abre no perfil (sem conta, na Sessão). */
-const currentHash = () => location.hash || (guestMode ? '#/' : '#/me');
+// Home (feed) na barra. false = some da barra e o app abre no perfil (a rota #/feed continua existindo).
+const HOME_ON = true;
+/** Abre na Home (sem a Home, no perfil); com sessão aberta ou sem conta, na Sessão. */
+const currentHash = () => location.hash || (guestMode || state.sessions.some((s) => !s.endedAt) ? '#/' : HOME_ON ? '#/feed' : '#/me');
 export const routeOf = (hash) => {
   const [re, fn, tab, name] = ROUTES.find(([r]) => r.test(hash)) ?? ROUTES[0];
   return { el: fn(...(hash.match(re)?.slice(1) ?? [])), tab, name };
@@ -81,7 +81,7 @@ export function App() {
       </header>
       <p className="offline-bar" role="status">{t('offline.bar')}</p>
       <main id="view" tabIndex={-1}>
-        {sh.auth ? <AuthScreen key={sh.auth.mode + sh.auth.blocked} {...sh.auth} /> : sh.ready && <Screen key={key}>{route.el}</Screen>}
+        {sh.auth ? <AuthScreen key={sh.auth.mode + sh.auth.blocked} {...sh.auth} /> : sh.ready ? <Screen key={key}>{route.el}</Screen> : <p className="boot-loading detect-status loading">{t('friends.loading')}</p>}
       </main>
       <TabBar hidden={!showChrome} tab={route.tab} />
     </>
@@ -253,7 +253,7 @@ function AuthScreen({ mode: startMode, blocked }) {
   const mail = () => email.trim().toLowerCase();
   const signedIn = (r) => {
     saveTokens(fromAuthResult(r.AuthenticationResult));
-    track(mode === 'signup' || mode === 'confirm' ? 'auth_signup' : 'auth_login', { method: 'email' });
+    trackNow(mode === 'signup' || mode === 'confirm' ? 'auth_signup' : 'auth_login', { method: 'email' });
     let after = '';
     try { after = sessionStorage.getItem('cm:after') || ''; sessionStorage.removeItem('cm:after'); } catch {}
     location.replace(`/${after}`);
@@ -323,7 +323,7 @@ function AuthScreen({ mode: startMode, blocked }) {
       {!entry && <button className="link small" type="button" onClick={() => go('login')}>‹ {t('back')}</button>}
       {cfg.google && entry && <>
         <div className="auth-or"><span>{t('auth.or')}</span></div>
-        <button className="btn block google-btn" type="button" onClick={() => { track('auth_google_click'); login('oauth2/authorize', { identity_provider: 'Google' }); }}>
+        <button className="btn block google-btn" type="button" onClick={() => { trackNow('auth_google_click'); login('oauth2/authorize', { identity_provider: 'Google' }); }}>
           <svg viewBox="0 0 24 24" aria-hidden="true">{GOOGLE_G.map(([c, d]) => <path key={c} d={d} fill={c} />)}</svg>{t('auth.google')}
         </button>
       </>}
