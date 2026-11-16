@@ -340,13 +340,13 @@ export class BoulderStack extends Stack {
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED, // gzip + brotli
         responseHeadersPolicy: headers,
-        // Atalho: admin.<site> → <site>/#/admin.
+        // Atalho: admin.<site> → <site>/#/admin. No Dev, robots.txt bloqueia o Google (não indexar a cópia de testes).
         functionAssociations: [{
           eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
           function: new cloudfront.Function(this, 'AdminShortcut', {
             runtime: cloudfront.FunctionRuntime.JS_2_0,
             code: cloudfront.FunctionCode.fromInline(
-              "function handler(e){var h=e.request.headers.host.value;if(h.indexOf('admin.')===0)return{statusCode:302,statusDescription:'Found',headers:{location:{value:'https://'+h.slice(6)+'/#/admin'}}};return e.request;}",
+              "function handler(e){var h=e.request.headers.host.value;if(h.indexOf('admin.')===0)return{statusCode:302,statusDescription:'Found',headers:{location:{value:'https://'+h.slice(6)+'/#/admin'}}};if(e.request.uri==='/robots.txt'&&h.indexOf('-dev.')>0)return{statusCode:200,statusDescription:'OK',headers:{'content-type':{value:'text/plain'}},body:'User-agent: *\\nDisallow: /\\n'};return e.request;}",
             ),
           }),
         }],

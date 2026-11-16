@@ -31,5 +31,13 @@
       "auto"
     ]
   },
-  "handle_links": "preferred"
+  "handle_links": "preferred",
+  "description": "Diário de boulder: foto da parede com a via marcada, grau, sequência e evolução.",
+  "lang": "pt-BR",
+  "categories": [
+    "sports",
+    "health",
+    "fitness",
+    "lifestyle"
+  ]
 }

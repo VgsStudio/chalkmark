@@ -6,9 +6,31 @@
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#eef1f6" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0f1226" media="(prefers-color-scheme: dark)">
-  <meta name="description" content="Chalkmark: marque cada via, cada sessão, cada grau.">
-  <title>Chalkmark</title>
+  <title>Chalkmark – App de boulder: registre vias, graus e evolução</title>
+  <meta name="description" content="Tire uma foto da parede e o Chalkmark marca a via sozinho. Registre flash, mandou ou projeto, acompanhe seu grau e sua sequência. Grátis no celular.">
+  <link rel="canonical" href="https://chalkmark.vsoller.com.br/">
+  <meta name="application-name" content="Chalkmark">
+  <meta name="apple-mobile-web-app-title" content="Chalkmark">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <!-- Prévia do link (WhatsApp, Instagram, Google, X) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Chalkmark">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:url" content="https://chalkmark.vsoller.com.br/">
+  <meta property="og:title" content="Chalkmark: seu diário de boulder">
+  <meta property="og:description" content="Foto da parede, via marcada, grau e evolução. Registre seus boulders e poste o story pronto. Grátis no celular.">
+  <meta property="og:image" content="https://chalkmark.vsoller.com.br/og.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="App Chalkmark mostrando a foto da parede com a via de boulder marcada">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Chalkmark: seu diário de boulder">
+  <meta name="twitter:description" content="Foto da parede, via marcada, grau e evolução. Grátis no celular.">
+  <meta name="twitter:image" content="https://chalkmark.vsoller.com.br/og.jpg">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","@id":"https://chalkmark.vsoller.com.br/#app","name":"Chalkmark","alternateName":"Chalkmark – diário de boulder","url":"https://chalkmark.vsoller.com.br/","description":"Tire uma foto da parede e o Chalkmark marca a via sozinho. Registre flash, mandou ou projeto, acompanhe seu grau e sua sequência. Grátis no celular.","applicationCategory":"SportsApplication","applicationSubCategory":"Escalada / Boulder","operatingSystem":"Android, iOS, Web (PWA)","browserRequirements":"Requer navegador moderno com JavaScript","inLanguage":"pt-BR","isAccessibleForFree":true,"image":"https://chalkmark.vsoller.com.br/og.jpg","screenshot":"https://chalkmark.vsoller.com.br/og.jpg","offers":{"@type":"Offer","price":"0","priceCurrency":"BRL"},"featureList":["Foto da parede com a via marcada automaticamente","Registro de flash, mandou ou projeto","Grau (escala V e Fontainebleau)","Sequência de semanas escalando, XP e níveis","Trilha de graus e conquistas","Story pronto para compartilhar","Ranking semanal com amigos"],"publisher":{"@id":"https://chalkmark.vsoller.com.br/#org"}},{"@type":"Organization","@id":"https://chalkmark.vsoller.com.br/#org","name":"Chalkmark","url":"https://chalkmark.vsoller.com.br/","logo":"https://chalkmark.vsoller.com.br/icon-512.png"},{"@type":"WebSite","@id":"https://chalkmark.vsoller.com.br/#site","name":"Chalkmark","url":"https://chalkmark.vsoller.com.br/","inLanguage":"pt-BR","publisher":{"@id":"https://chalkmark.vsoller.com.br/#org"}}]}</script>
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="/icon-512.png" type="image/png" sizes="512x512">
   <link rel="apple-touch-icon" href="/icon-180.png">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="stylesheet" href="/assets/__CSS__">
@@ -28,6 +50,11 @@
   <!-- Abertura: aparece antes do JavaScript baixar; o React mostra a mesma tela até os dados chegarem. -->
   <div id="root"><div class="splash" role="status" aria-label="Carregando"><img src="/icon.svg" alt="" width="96" height="96"><strong>Chalkmark</strong><span class="spin"></span></div></div>
 
+  <!-- Para buscadores e quem está sem JavaScript: o que é o app. -->
+  <noscript>
+    <h1>Chalkmark: diário de boulder</h1>
+    <p>Fotografe a parede da academia de escalada e toque numa agarra: o Chalkmark marca a via inteira. Registre se foi flash, se mandou ou se ainda é projeto, acompanhe o grau, a sequência de semanas escalando, o XP e a trilha de graus, e compartilhe o story pronto com os amigos.</p>
+  </noscript>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
   <dialog class="sheet" id="sheet"></dialog>
 </body>
