@@ -100,7 +100,7 @@ function Announce({ onSent }) {
   return (
     <section className="card stack">
       <h2>Novo aviso</h2>
-      <label className="field"><span>Título</span><input value={title} maxLength={60} onChange={(e) => setTitle(e.target.value)} placeholder="Chalkmark ficou mais rápido ⚡" /></label>
+      <label className="field"><span>Título</span><input type="text" value={title} maxLength={60} onChange={(e) => setTitle(e.target.value)} placeholder="Chalkmark ficou mais rápido ⚡" /></label>
       <label className="field"><span>Texto</span><textarea value={body} maxLength={240} rows={3} onChange={(e) => setBody(e.target.value)} placeholder="O que mudou e um convite para abrir o app." /></label>
       {title && <div className="admin-preview"><img src="/icon.svg" alt="" width={36} height={36} /><div><strong>{title}</strong><div className="small">{body}</div></div></div>}
       <p className="muted small">Vai como notificação para quem ativou e aparece em Novidades (🔔) para todo mundo.</p>
