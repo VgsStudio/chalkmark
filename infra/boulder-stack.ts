@@ -338,6 +338,16 @@ export class BoulderStack extends Stack {
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED, // gzip + brotli
         responseHeadersPolicy: headers,
+        // Atalho: /admin → tela de Administração (#/admin).
+        functionAssociations: [{
+          eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
+          function: new cloudfront.Function(this, 'AdminShortcut', {
+            runtime: cloudfront.FunctionRuntime.JS_2_0,
+            code: cloudfront.FunctionCode.fromInline(
+              "function handler(e){var u=e.request.uri;if(u==='/admin'||u==='/admin/')return{statusCode:302,statusDescription:'Found',headers:{location:{value:'/#/admin'}}};return e.request;}",
+            ),
+          }),
+        }],
       },
       additionalBehaviors: {
         '/api/*': {
