@@ -56,6 +56,8 @@ export class BoulderStack extends Stack {
     const origin = `https://${props.domainName}`;
     const domains = [props.domainName, ...props.aliasDomains];
     const allOrigins = domains.map((d) => `https://${d}`);
+    // admin.<site>: só um atalho (redireciona para <site>/#/admin, onde já está o login).
+    const adminDomain = `admin.${props.aliasDomains[0] ?? props.domainName}`;
 
     // ---------- Dados ----------
     // Dados do usuário: nada de DESTROY aqui.
@@ -291,7 +293,7 @@ export class BoulderStack extends Stack {
     for (const p of ['/api/public/shares/{id}', '/api/public/users/{handle}']) httpApi.addRoutes({ path: p, methods: [M.GET], integration });
 
     // ---------- Site: CloudFront com S3 e a API na mesma origem ----------
-    const certificate = new acm.Certificate(this, 'Cert', { domainName: props.domainName, subjectAlternativeNames: props.aliasDomains, validation: acm.CertificateValidation.fromDns(zone) });
+    const certificate = new acm.Certificate(this, 'Cert', { domainName: props.domainName, subjectAlternativeNames: [...props.aliasDomains, adminDomain], validation: acm.CertificateValidation.fromDns(zone) });
     const cognitoDomain = `https://${props.cognitoDomainPrefix}.auth.${this.region}.amazoncognito.com`;
     const s3Hosts = `https://${photos.bucketName}.s3.amazonaws.com https://${photos.bucketName}.s3.${this.region}.amazonaws.com`;
     const csp = [
@@ -328,7 +330,7 @@ export class BoulderStack extends Stack {
       },
     });
     const distribution = new cloudfront.Distribution(this, 'Cdn', {
-      domainNames: domains,
+      domainNames: [...domains, adminDomain],
       certificate,
       defaultRootObject: 'index.html',
       httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
@@ -338,13 +340,13 @@ export class BoulderStack extends Stack {
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED, // gzip + brotli
         responseHeadersPolicy: headers,
-        // Atalho: /admin → tela de Administração (#/admin).
+        // Atalho: admin.<site> → <site>/#/admin.
         functionAssociations: [{
           eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
           function: new cloudfront.Function(this, 'AdminShortcut', {
             runtime: cloudfront.FunctionRuntime.JS_2_0,
             code: cloudfront.FunctionCode.fromInline(
-              "function handler(e){var u=e.request.uri;if(u==='/admin'||u==='/admin/')return{statusCode:302,statusDescription:'Found',headers:{location:{value:'/#/admin'}}};return e.request;}",
+              "function handler(e){var h=e.request.headers.host.value;if(h.indexOf('admin.')===0)return{statusCode:302,statusDescription:'Found',headers:{location:{value:'https://'+h.slice(6)+'/#/admin'}}};return e.request;}",
             ),
           }),
         }],
@@ -363,7 +365,7 @@ export class BoulderStack extends Stack {
     const alias = route53.RecordTarget.fromAlias(new r53targets.CloudFrontTarget(distribution));
     new route53.ARecord(this, 'AliasA', { zone, recordName: props.domainName, target: alias });
     new route53.AaaaRecord(this, 'AliasAAAA', { zone, recordName: props.domainName, target: alias });
-    for (const d of props.aliasDomains) {
+    for (const d of [...props.aliasDomains, adminDomain]) {
       const key = d.split('.')[0];
       new route53.ARecord(this, `AliasA-${key}`, { zone, recordName: d, target: alias });
       new route53.AaaaRecord(this, `AliasAAAA-${key}`, { zone, recordName: d, target: alias });
