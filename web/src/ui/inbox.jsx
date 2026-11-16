@@ -16,7 +16,9 @@ const NEWS = [
 ];
 
 const LOCAL_SEEN = 'cm:newsSeen'; // sem conta: guarda no aparelho
-const inbox = { items: [], seenAt: null, loaded: false };
+const inbox = { items: [], news: [], seenAt: null, loaded: false };
+/** Novidades: as fixas daqui + os avisos mandados pela Administração. */
+const allNews = () => [...inbox.news.map((x) => ({ ...x, pt: x.body, en: x.body })), ...NEWS];
 
 /** Busca os avisos (ao abrir o app e ao voltar para ele). */
 export async function loadInbox() {
@@ -25,7 +27,7 @@ export async function loadInbox() {
 }
 const unread = () => {
   const since = inbox.seenAt ?? '';
-  return [...inbox.items, ...NEWS].filter((x) => x.at > since).length;
+  return [...inbox.items, ...allNews()].filter((x) => x.at > since).length;
 };
 
 export function Bell() {
@@ -55,7 +57,7 @@ function Inbox({ before }) {
   const [tab, setTab] = useState('all');
   const close = () => $('#sheet').close();
   const events = inbox.items.map((x) => ({ ...x, type: 'event' }));
-  const news = NEWS.map((x) => ({ ...x, type: 'news' }));
+  const news = allNews().map((x) => ({ ...x, type: 'news' }));
   const list = (tab === 'news' ? news : tab === 'events' ? events : [...events, ...news]).sort((a, b) => b.at.localeCompare(a.at));
   return (
     <div className="stack">
@@ -67,7 +69,7 @@ function Inbox({ before }) {
             {list.map((x) => (
               <li key={`${x.type}${x.at}${x.from?.handle ?? ''}${x.climbId ?? ''}`} className={x.at > before ? 'new' : undefined}>
                 {x.type === 'news'
-                  ? <div className="person-row"><span className="inbox-ico" aria-hidden="true">✨</span><div className="grow"><div>{lang === 'pt' ? x.pt : x.en}</div><div className="muted small">{relTime(x.at)}</div></div></div>
+                  ? <div className="person-row"><span className="inbox-ico" aria-hidden="true">✨</span><div className="grow">{x.title && <strong>{x.title}</strong>}<div>{lang === 'pt' ? x.pt : x.en}</div><div className="muted small">{relTime(x.at)}</div></div></div>
                   : (
                     <a className="person-row" href={x.kind === 'fire' ? `#/climb/${x.climbId}` : `#/u/${x.from.handle}`} onClick={close}>
                       <Avatar p={x.from} />

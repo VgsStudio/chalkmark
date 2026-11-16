@@ -7,6 +7,7 @@ import { randomBytes } from 'node:crypto';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { analyzePhoto, COLORS, sanitizeAi } from './ai.ts';
+import { announce, announcements, overview, requireAdmin } from './admin.ts';
 import { cleanSubscription, pushTo, recordOpen, removeSubscription, saveSubscription, sendDaily, setPrefs, validTz, vapidKeys } from './push.ts';
 // Mesmas contas de XP/nível/sequência do app (uma fonte só).
 import { distanceKm, isSend, level, streakWeeks, totalXp } from '../web/src/stats.js';
@@ -640,7 +641,9 @@ async function route(event: HttpEvent, sub: string): Promise<HttpResult> {
       ]);
       const list = items.sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 50)
         .map(({ kind, at, from, climbId, grade, color }) => ({ kind, at, from, climbId, grade, color }));
-      return json(200, { items: list, seenAt: st?.inboxSeen ?? null });
+      // Avisos do app (feitos na Administração): aparecem em "Novidades" para todo mundo.
+      const news = (await announcements()).map(({ at, title, body }) => ({ at, title, body }));
+      return json(200, { items: list, news, seenAt: st?.inboxSeen ?? null });
     }
     case 'POST /api/inbox/seen': {
       const at = nowIso();
@@ -672,6 +675,18 @@ async function route(event: HttpEvent, sub: string): Promise<HttpResult> {
         xp = FEEDBACK_XP;
       } catch (e) { if ((e as Error).name !== 'ConditionalCheckFailedException') throw e; }
       return json(201, { ok: true, xp });
+    }
+    case 'GET /api/admin/overview':
+      requireAdmin(event.requestContext.authorizer?.jwt?.claims);
+      return json(200, await overview());
+    case 'POST /api/admin/announce': {
+      requireAdmin(event.requestContext.authorizer?.jwt?.claims);
+      const b = body();
+      return json(200, await announce(sub, {
+        title: str(b.title, 60, 'title') || bad('title'),
+        body: str(b.body, 240, 'body') || bad('body'),
+        test: b.test === true,
+      }));
     }
     case 'DELETE /api/account': {
       // Confirmação explícita no corpo (o app pede para digitar a palavra).

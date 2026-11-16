@@ -190,7 +190,9 @@ export class BoulderStack extends Stack {
     });
     // Excluir a conta apaga também o login.
     apiFn.addEnvironment('USER_POOL_ID', userPool.userPoolId);
-    userPool.grant(apiFn, 'cognito-idp:AdminDeleteUser');
+    userPool.grant(apiFn, 'cognito-idp:AdminDeleteUser', 'cognito-idp:ListUsers');
+    // Administração: quem está neste grupo vê #/admin (usuários, retenção, avisos). Entrar no grupo: pelo console/CLI.
+    new cognito.CfnUserPoolGroup(this, 'Admins', { userPoolId: userPool.userPoolId, groupName: 'admin', description: 'Administração do Chalkmark' });
     userPool.addDomain('Domain', {
       cognitoDomain: { domainPrefix: props.cognitoDomainPrefix },
       managedLoginVersion: cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN,
@@ -282,6 +284,7 @@ export class BoulderStack extends Stack {
       ['/api/profile', M.GET], ['/api/profile', M.PUT], ['/api/users', M.GET], ['/api/users/{handle}', M.GET],
       ['/api/users/{handle}/follow', M.POST], ['/api/users/{handle}/follow', M.DELETE],
       ['/api/users/{handle}/climbs/{id}/copy', M.POST], ['/api/social', M.GET],
+      ['/api/admin/overview', M.GET], ['/api/admin/announce', M.POST],
     ];
     for (const [p, method] of routes) httpApi.addRoutes({ path: p, methods: [method], integration, authorizer });
     // Sem login (o app pode ser usado antes de criar conta): só leitura do que já é público.

@@ -14,6 +14,7 @@ import { History, Progress } from './history.jsx';
 import { Feed, Me, Friends, User } from './social.jsx';
 import { settingsSheet, SettingsPage } from './settings.jsx';
 import { Bell } from './inbox.jsx';
+import { Admin } from './admin.jsx';
 
 // ---------- estado da casca ----------
 /** ready: dados carregados; auth: tela de login aberta ({ mode, blocked }); nonce: força remontar a tela. */
@@ -34,6 +35,7 @@ const ROUTES = [
   [/^#\/friends$/, () => <Friends />, 'ranking', 'friends'],
   [/^#\/settings(?:\/([a-z]+))?$/, (group) => <SettingsPage group={group} />, 'profile', 'settings'],
   [/^#\/u\/([a-z0-9_.]{3,20})$/, (handle) => <User handle={handle} />, 'profile', 'user_profile'],
+  [/^#\/admin$/, () => <Admin />, 'profile', 'admin'],
 ];
 // Home (feed) na barra. false = some da barra e o app abre no perfil (a rota #/feed continua existindo).
 const HOME_ON = true;

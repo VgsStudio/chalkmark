@@ -11,6 +11,7 @@ import { SHARE_ICON } from '../game.js';
 import { openSheet } from '../session.js';
 import { mount, Seg, Stepper } from './base.jsx';
 import { LineIcon } from './game.jsx';
+import { isAdmin } from './admin.jsx';
 
 const closeSheet = () => $('#sheet').close();
 const Field = ({ label, children }) => <div><div className="small muted">{label}</div>{children}</div>;
@@ -47,6 +48,7 @@ export function SettingsPage({ group }) {
               <div className="grow"><strong>{title}</strong><div className="muted small">{hint}</div></div><span className="muted">›</span>
             </a></li>
           ))}
+          {!guestMode && isAdmin() && <li><a className="settings-row" href="#/admin"><div className="grow"><strong>Administração</strong><div className="muted small">Usuários, retenção e avisos</div></div><span className="muted">›</span></a></li>}
         </ul>
       </div>
     );
