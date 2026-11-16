@@ -6,7 +6,7 @@ import * as S from '../stats.js';
 import { $, state, fail, grade, api, activeSession, gymOf, upsert } from '../core.js';
 import { render } from '../app.js';
 import { getPos, geoGranted, openSheet } from '../session.js';
-import { quickLogSheet } from './climb.jsx';
+import { quickLogSheet, setNav } from './climb.jsx';
 import { useStore, Seg, ClimbRow } from './base.jsx';
 import { Hero, Icon, recapSheet } from './game.jsx';
 import { GoalsCard, SessionHeader } from './history.jsx';
@@ -143,7 +143,7 @@ function ActiveSession({ s }) {
       <a className="btn go big block" href="#/new">+ {t('session.add')}</a>
       <button className="btn block" type="button" onClick={() => quickLogSheet(s)}>{t('quick.button')}</button>
       {climbs.length
-        ? <ul className="list card">{climbs.map((c) => <ClimbRow key={c.id} c={c} />)}</ul>
+        ? <ul className="list card" onClick={() => setNav(climbs.map((c) => c.id))}>{climbs.map((c) => <ClimbRow key={c.id} c={c} />)}</ul>
         : <p className="muted">{t('session.empty')}</p>}
       <button className="btn block" type="button" onClick={() => openSheet(<EndSession s={s} />)}>{t('session.end')}</button>
     </div>

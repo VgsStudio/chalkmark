@@ -565,8 +565,11 @@ export function ClimbView({ id }) {
     setBusy('');
   };
 
-  const ni = navList.indexOf(id);
-  const goNav = (dd) => { const nid = navList[ni + dd]; if (nid) location.replace(`#/climb/${nid}`); };
+  // Aberto de fora de uma lista (boulder recém-salvo, sininho…) ou lista antiga: os da mesma sessão,
+  // do mais novo para o mais velho (como na tela da sessão), já com o boulder novo.
+  const nav = navList.includes(id) ? navList : state.climbs.filter((x) => x.sessionId === c?.sessionId).sort(byNewest).map((x) => x.id);
+  const ni = nav.indexOf(id);
+  const goNav = (dd) => { const nid = nav[ni + dd]; if (nid) location.replace(`#/climb/${nid}`); };
   const e = he.current;
   const pinned = state.profile?.pinned === r.id;
   const gymName = gymOf(state.sessions.find((x) => x.id === c.sessionId)?.gymId)?.name ?? r.gymName ?? '';
@@ -575,12 +578,12 @@ export function ClimbView({ id }) {
     <div className="stack">
       <div className="row">
         <button className="link" type="button" onClick={() => history.back()}>‹ {t('back')}</button>
-        {ni >= 0 && navList.length > 1 && <>
+        {ni >= 0 && nav.length > 1 && <>
           <span className="grow" />
           <div className="row nav-top">
             <button className="icon-btn" type="button" disabled={ni <= 0} aria-label={t('nav.prev')} onClick={() => goNav(-1)}>‹</button>
-            <span className="small muted num">{`${ni + 1}/${navList.length}`}</span>
-            <button className="icon-btn" type="button" disabled={ni >= navList.length - 1} aria-label={t('nav.next')} onClick={() => goNav(1)}>›</button>
+            <span className="small muted num">{`${ni + 1}/${nav.length}`}</span>
+            <button className="icon-btn" type="button" disabled={ni >= nav.length - 1} aria-label={t('nav.next')} onClick={() => goNav(1)}>›</button>
           </div>
         </>}
       </div>
@@ -633,7 +636,7 @@ export function ClimbView({ id }) {
           </section>
         )
         : <>
-          <WithNav hasPrev={ni > 0} hasNext={ni >= 0 && ni < navList.length - 1} go={goNav}>
+          <WithNav hasPrev={ni > 0} hasNext={ni >= 0 && ni < nav.length - 1} go={goNav}>
             <ClimbStage url={photo?.url ?? r.thumbUrl} c={r} />
           </WithNav>
           {S.isSend(c) && <StoryButton c={c} r={r} photoUrl={photo?.url ?? r.thumbUrl} gymName={gymName} />}
