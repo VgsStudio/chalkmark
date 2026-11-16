@@ -55,7 +55,22 @@ async function migrateGuest(g) {
   clearGuest();
 }
 
+/**
+ * Porta de entrada: quem chega pela primeira vez (sem conta, nada registrado, fora do app instalado, sem link
+ * de boulder/perfil) vê a apresentação em /app-de-boulder. De lá, "Começar grátis" volta com ?app e "Entrar" com ?entrar.
+ */
+function primeiraVisita(q) {
+  if (q.has('app') || q.has('entrar') || q.has('code') || q.has('error_description') || location.hash) return false;
+  if (matchMedia('(display-mode: standalone)').matches || navigator.standalone) return false;
+  try { return !localStorage.getItem('bl:tokens') && !localStorage.getItem('cm:guest') && !localStorage.getItem('cm:veio'); } catch { return false; }
+}
+
 async function boot() {
+  const q = new URLSearchParams(location.search);
+  if (primeiraVisita(q)) { location.replace('/app-de-boulder'); return; }
+  try { localStorage.setItem('cm:veio', '1'); } catch {}
+  const entrar = q.has('entrar');
+  if (q.has('app') || entrar) history.replaceState({}, '', `/${location.hash}`);
   createRoot(document.getElementById('root')).render(createElement(App));
   const sheet = document.getElementById('sheet');
   sheet.addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
@@ -70,6 +85,7 @@ async function boot() {
     setGuestMode(true);
     startGuest();
     if (guestLocked()) { await loadAll(); return showAuth({ mode: 'signup', blocked: true }); }
+    if (entrar) showAuth({ mode: 'login' });
   } else if (pending) {
     try { await migrateGuest(pending); toast(t('guest.migrated')); } catch (e) { console.error(e); toast(t('guest.migrateFailed')); }
   }
