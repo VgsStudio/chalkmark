@@ -69,6 +69,8 @@ export function App() {
   useEffect(() => { if (sh.ready && !sh.auth) pageview(route.name); }, [currentHash(), sh.ready, sh.auth]); // eslint-disable-line react-hooks/exhaustive-deps
   const showChrome = sh.ready && !sh.auth;
   useSwipeNav(showChrome);
+  // Abertura com a logo (igual à do index.html) até os dados chegarem.
+  if (!sh.ready && !sh.auth) return <div className="splash" role="status" aria-label={t('friends.loading')}><img src="/icon.svg" alt="" width={96} height={96} /><strong>Chalkmark</strong><span className="spin" /></div>;
   return (
     <>
       <header className="top">
@@ -81,7 +83,7 @@ export function App() {
       </header>
       <p className="offline-bar" role="status">{t('offline.bar')}</p>
       <main id="view" tabIndex={-1}>
-        {sh.auth ? <AuthScreen key={sh.auth.mode + sh.auth.blocked} {...sh.auth} /> : sh.ready ? <Screen key={key}>{route.el}</Screen> : <p className="boot-loading detect-status loading">{t('friends.loading')}</p>}
+        {sh.auth ? <AuthScreen key={sh.auth.mode + sh.auth.blocked} {...sh.auth} /> : <Screen key={key}>{route.el}</Screen>}
       </main>
       <TabBar hidden={!showChrome} tab={route.tab} />
     </>

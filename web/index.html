@@ -25,8 +25,8 @@
       <feComposite in="rough" in2="holes" operator="in"/>
     </filter>
   </svg>
-  <!-- Aparece antes do JavaScript baixar; o React troca pelo app (com o mesmo "Carregando…" até os dados chegarem). -->
-  <div id="root"><main id="view"><p class="boot-loading detect-status loading">Carregando…</p></main></div>
+  <!-- Abertura: aparece antes do JavaScript baixar; o React mostra a mesma tela até os dados chegarem. -->
+  <div id="root"><div class="splash" role="status" aria-label="Carregando"><img src="/icon.svg" alt="" width="96" height="96"><strong>Chalkmark</strong><span class="spin"></span></div></div>
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
   <dialog class="sheet" id="sheet"></dialog>

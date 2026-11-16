@@ -394,7 +394,10 @@ p.small .ico { display: inline; width: 14px; height: 14px; vertical-align: -2px;
 .check input { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--blue); }
 .detect-status { margin: 10px 0 0; font-weight: 700; color: var(--muted); min-height: 1.4em; }
 .story-preview { display: block; max-height: 55vh; max-width: 100%; margin: 0 auto; border-radius: 14px; }
-.boot-loading { text-align: center; margin-top: 30vh; }
+.splash { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: var(--bg); }
+.splash img { width: 96px; height: 96px; border-radius: 24px; animation: pop .5s ease-out; }
+.splash strong { font-size: 28px; font-weight: 900; letter-spacing: -.02em; }
+.splash .spin { width: 22px; height: 22px; margin-top: 18px; border: 3px solid var(--line); border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; }
 .detect-status.loading::before { content: ""; display: inline-block; width: 12px; height: 12px; margin-right: 8px; vertical-align: -1px; border: 2.5px solid var(--line); border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; }
 .overlay rect { stroke: #00e5ff; stroke-width: 3; }
 .overlay rect.under { stroke: rgb(0 0 0 / .55); stroke-width: 6; }
