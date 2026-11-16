@@ -780,3 +780,8 @@ main[data-slide="right"] > * { animation: slide-r .22s ease-out; }
 .admin-table th, .admin-table td { padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
 .admin-preview { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 14px; background: var(--line); }
 .admin-preview img { border-radius: 8px; }
+.admin-kpis { align-items: stretch; }
+.admin-kpis .card { margin: 0; }
+.admin .field input, .admin .field textarea { width: 100%; box-sizing: border-box; }
+.admin .row select { width: auto; flex: none; }
+.admin-table td:first-child { min-width: 140px; }
