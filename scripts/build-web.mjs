@@ -54,7 +54,9 @@ const html = readFileSync(path.join(root, 'web/index.html'), 'utf8').replace('__
 writeFileSync(path.join(dist, 'pages/index.html'), html);
 // Service worker na raiz (escopo do app inteiro), com a versão do build no nome do cache.
 writeFileSync(path.join(dist, 'pages/sw.js'), readFileSync(path.join(root, 'web/sw.js'), 'utf8').replace('__VERSION__', js.replace(/\.js$/, '')));
-for (const f of ['manifest.webmanifest', 'icon.svg', 'icon-180.png', 'icon-512.png', 'email/banner.png', 'privacidade.html', 'termos.html', 'legal.css', 'robots.txt', 'sitemap.xml', 'og.jpg']) cpSync(path.join(root, 'web', f), path.join(dist, 'pages', f));
+for (const f of ['manifest.webmanifest', 'icon.svg', 'icon-180.png', 'icon-512.png', 'email/banner.png', 'privacidade.html', 'termos.html', 'legal.css', 'robots.txt', 'sitemap.xml', 'og.jpg', 'app-de-boulder.html']) cpSync(path.join(root, 'web', f), path.join(dist, 'pages', f));
+// Página de apresentação (SEO): estilos e imagens próprios.
+cpSync(path.join(root, 'web/landing'), path.join(dist, 'pages/landing'), { recursive: true });
 
 // Modelo de agarras (versão no nome do arquivo) e runtime WebAssembly.
 cpSync(path.join(root, 'web/models/holds-yolov8n-fp16.onnx'), path.join(dist, 'static/assets/models/holds-yolov8n-fp16.onnx'));
